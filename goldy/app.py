@@ -1,28 +1,34 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, Response, jsonify 
-from flask_cors import CORS
-import sklearn
+from flask import Flask, request, jsonify
+from datetime import datetime
+import yfinance as yf
 import pickle
 
 app = Flask(__name__)
-CORS(app)
 
-regressor = pickle.load(open('finalized_model.pkl', 'rb'))
+linear = pickle.load(open('regression_linear_model.pkl', 'rb'))
+@app.route('/prediction', methods=['GET'])
+def get_prediction():
+    # Mendapatkan tanggal input dari query parameter
+    date_str = request.args.get('date')
+    date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
-@app.route('/prediction')
-def index():
-    SPX = request.args.get('SPX')
-    USO = request.args.get('USO')
-    SLV = request.args.get('SLV')
-    EUR_USD = request.args.get('EUR_USD')
+    # Mengambil data menggunakan yfinance
+    data = yf.download('GLD', '2008-06-01', date, auto_adjust=True)
+    data['S_3'] = data['Close'].rolling(window=3).mean()
+    data['S_9'] = data['Close'].rolling(window=9).mean()
+    data = data.dropna()
 
-    SPX = float(SPX)
-    USO = float(USO)
-    SLV = float(SLV)
-    EUR_USD = float(EUR_USD)
-    
-    result = regressor.predict([[SPX, USO, SLV, EUR_USD]])
-    #return response as json
-    res = {
-        'result': result[0]
+    # Melakukan prediksi hanya untuk data terakhir
+    last_data = data.tail(1)
+    predicted_price = linear.predict([[last_data['S_3'].iloc[0], last_data['S_9'].iloc[0]]])[0]
+    signal = 'Buy' if predicted_price > last_data['Close'].iloc[0] else 'No Position'
+
+    response = {
+        'predicted_price': predicted_price,
+        'signal': signal
     }
-    return jsonify(res)
+
+    return jsonify(response)
+
+if __name__ == '__main__':
+    app.run()
