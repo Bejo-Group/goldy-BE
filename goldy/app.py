@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from datetime import datetime
 import yfinance as yf
 import pickle
 
 app = Flask(__name__)
+CORS(app)
 
 linear = pickle.load(open('regression_linear_model.pkl', 'rb'))
 @app.route('/prediction', methods=['GET'])
