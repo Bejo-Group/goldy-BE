@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, Response, jsonify 
+from flask_cors import CORS
 import sklearn
 import pickle
+
 app = Flask(__name__)
+CORS(app)
 
 regressor = pickle.load(open('finalized_model.pkl', 'rb'))
 
@@ -16,7 +19,7 @@ def index():
     USO = float(USO)
     SLV = float(SLV)
     EUR_USD = float(EUR_USD)
-
+    
     result = regressor.predict([[SPX, USO, SLV, EUR_USD]])
     #return response as json
     res = {
