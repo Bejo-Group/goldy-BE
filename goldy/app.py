@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, Response 
+from flask import Flask, render_template, request, redirect, url_for, flash, Response, jsonify 
 import sklearn
 import pickle
 app = Flask(__name__)
@@ -22,4 +22,4 @@ def index():
     res = {
         'result': result[0]
     }
-    return res
+    return jsonify(res)
